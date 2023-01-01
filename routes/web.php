@@ -32,4 +32,10 @@ Route::prefix('admin')->middleware(['auth','isAdmin'])->group(function() {
         Route::put('update-category/{category_id}','update');
         Route::get('delete-category/{category_id}','destroy');
     });
+
+    Route::controller(\App\Http\Controllers\Admin\PostController::class)->group(function(){
+        Route::get('posts','index');
+        Route::get('add-post','create');
+        Route::post('add-post','store');
+    });
 });
