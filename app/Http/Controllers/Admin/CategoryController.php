@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Category;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-
 use App\Http\Requests\CategoryFormRequest;
 use function PHPUnit\Framework\returnSelf;
 
@@ -48,20 +51,20 @@ class CategoryController extends Controller
         $category->description = $data['description'];
         if ($request->hasFile('image')) {
             $file = $request->file('image');
-            $filename = time().'-'.$file->getClientOriginalExtension();
-            $file->move('uploads/category',$filename);
+            $filename = time() . '-' . $file->getClientOriginalExtension();
+            $file->move('uploads/category', $filename);
             $category->image = $filename;
         }
         $category->meta_title = $data['meta_title'];
         $category->meta_description = $data['meta_description'];
         $category->meta_keyword = $data['meta_keyword'];
-        $category->navbar_status = $request->input('navbar_status','0');
-        $category->status = $request->input('status','0');
+        $category->navbar_status = $request->input('navbar_status', '0');
+        $category->status = $request->input('status', '0');
         $category->created_by = Auth::user()->id;
 
         $category->save();
 
-        return redirect('admin/category')->with('message',"category added successfully!");
+        return redirect('admin/category')->with('message', "Category added successfully!");
     }
 
     /**
@@ -81,9 +84,10 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function edit(Category $category)
+    public function edit($category_id)
     {
-        //
+        $category = Category::find($category_id);
+        return view('admin.category.edit', compact('category'));
     }
 
     /**
@@ -93,9 +97,31 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Category $category)
+    public function update(CategoryFormRequest $request, $category_id)
     {
-        //
+        $data = $request->validated();
+        DB::enableQueryLog();
+        $category = Category::find($category_id);
+        $category->name = $data['name'];
+        $category->slug = $data['slug'];
+        $category->description = $data['description'];
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            $filename = time() . '-' . $file->getClientOriginalExtension();
+            $file->move('uploads/category', $filename);
+            $category->image = $filename;
+        }
+        $category->meta_title = $data['meta_title'];
+        $category->meta_description = $data['meta_description'];
+        $category->meta_keyword = $data['meta_keyword'];
+        $category->navbar_status = $request->input('navbar_status', '0');
+        $category->status = $request->input('status', '0');
+        $category->created_by = Auth::user()->id;
+
+        $category->update();
+        $q = DB::getQueryLog();
+        Log::info("data", [end($q)]);
+        return redirect('admin/category')->with('message', "Category updated successfully!");
     }
 
     /**
@@ -104,8 +130,19 @@ class CategoryController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Category $category)
+    public function destroy($category_id)
     {
-        //
+        $category = Category::find($category_id);
+
+        if ($category) {
+            $image_path = 'uploads/category/' . $category->image;
+            if (File::exists($image_path)) {
+                File::delete($image_path);
+            }
+            $category->delete();
+            return redirect('admin/category')->with('message', 'Deleted Successfully!');
+        } else {
+            return redirect('admin/category')->with('message', 'Category not found!');
+        }
     }
 }
