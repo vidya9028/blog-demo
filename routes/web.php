@@ -28,5 +28,8 @@ Route::prefix('admin')->middleware(['auth','isAdmin'])->group(function() {
         Route::get('category', 'index');
         Route::get('add-category', 'create');
         Route::post('add-category','store');
+        Route::get('category/{category_id}','edit');
+        Route::put('update-category/{category_id}','update');
+        Route::get('delete-category/{category_id}','destroy');
     });
 });
